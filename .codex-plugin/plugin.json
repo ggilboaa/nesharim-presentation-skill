@@ -1,0 +1,32 @@
+{
+  "name": "nesharim-presentations",
+  "version": "0.1.2",
+  "description": "Create, edit, validate, and deliver branded Hebrew presentations for Nesharim.",
+  "author": {
+    "name": "Hezki Gilboa"
+  },
+  "repository": "https://github.com/ggilboaa/nesharim-presentation-skill",
+  "keywords": [
+    "presentations",
+    "hebrew",
+    "rtl",
+    "nesharim"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "מצגות נשרים",
+    "shortDescription": "יצירה ועריכה של מצגות נשרים בעברית",
+    "longDescription": "יוצר מצגות HTML בעברית וב־RTL לפי שפת המותג של נשרים, כולל בדיקות, מצב עריכה וייצוא.",
+    "developerName": "Hezki Gilboa",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "צור מצגת נשרים חדשה מהנושא והחומרים שאצרף.",
+      "עדכן את מצגת נשרים המצורפת ושמור על שפת העיצוב הקיימת."
+    ],
+    "brandColor": "#0A1C2F"
+  }
+}
