@@ -4,10 +4,49 @@
 import argparse
 import re
 import sys
+from html.parser import HTMLParser
 from pathlib import Path
 
 
-def validate(text: str, require_editor: bool) -> tuple[list[str], list[str]]:
+class SlideReader(HTMLParser):
+    """Collect actual slide markup without matching JavaScript strings."""
+    VOID = {'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'}
+
+    def __init__(self):
+        super().__init__()
+        self.slides = []
+        self.current = None
+        self.depth = 0
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if self.current is None and 'slide' in attrs.get('class', '').split():
+            self.current = {'text': '', 'divider': False}
+            self.depth = 0
+        if self.current is not None:
+            if tag not in self.VOID:
+                self.depth += 1
+            if 'speaker-divider' in attrs.get('class', '').split() or attrs.get('data-role') == 'speaker-divider':
+                self.current['divider'] = True
+
+    def handle_startendtag(self, tag, attrs):
+        self.handle_starttag(tag, attrs)
+        if tag not in self.VOID:
+            self.handle_endtag(tag)
+
+    def handle_endtag(self, tag):
+        if self.current is not None and tag not in self.VOID:
+            self.depth -= 1
+            if self.depth == 0:
+                self.slides.append(self.current)
+                self.current = None
+
+    def handle_data(self, data):
+        if self.current is not None:
+            self.current['text'] += data
+
+
+def validate(text: str, require_editor: bool = False, publish: bool = False) -> tuple[list[str], list[str]]:
     errors: list[str] = []
     warnings: list[str] = []
 
@@ -48,16 +87,37 @@ def validate(text: str, require_editor: bool) -> tuple[list[str], list[str]]:
     if require_editor:
         need("__brainEdInit" in text, "Edit Mode requested but editor marker is missing")
 
+    has_editor = '__brainEdInit' in text or bool(re.search(r'id=[\'"]ed-(?:fab|toolbar)[\'"]', portable_markup))
+    if not require_editor:
+        need(not has_editor, 'Edit Mode must be absent by default; use --require-editor only for an explicitly requested editable copy')
+    if publish:
+        need(not has_editor, 'publication copy must not contain Edit Mode')
+    parsed = SlideReader()
+    parsed.feed(portable_markup)
+    need(len(parsed.slides) >= 2, 'expected distinct opening and closing slide elements')
+    if parsed.slides:
+        need('חזקי גלבוע' in parsed.slides[0]['text'], 'speaker must be on the opening slide, not a content slide')
+        need(parsed.slides[0]['divider'], 'opening needs a speaker-divider below the lecture subtitle')
+        for value in ('לייעוץ ומענה:', '053-766-1500', 'nesharim.org.il'):
+            need(value in parsed.slides[-1]['text'], 'closing slide missing ' + value)
+    need(bool(re.search(r'<meta\b[^>]*name=[\'"]format-detection[\'"][^>]*content=[\'"][^\'"]*telephone=no', text, re.I)), 'missing mobile phone format-detection protection')
+    if publish:
+        need('nav-visible' in text, 'publication needs quiet reveal-on-interaction navigation')
+        fs = re.search(r'<button\b[^>]*id=[\'"]fs[\'"][^>]*>(.*?)</button>', portable_markup, re.S)
+        need(bool(fs and '<svg' in fs[1]), 'fullscreen control must use a small icon')
+
     return errors, warnings
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("html")
-    parser.add_argument("--require-editor", action="store_true")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--require-editor", action="store_true")
+    mode.add_argument("--publish", action="store_true")
     args = parser.parse_args()
     path = Path(args.html)
-    errors, warnings = validate(path.read_text(encoding="utf-8"), args.require_editor)
+    errors, warnings = validate(path.read_text(encoding="utf-8"), args.require_editor, args.publish)
     for item in warnings:
         print(f"WARNING: {item}")
     for item in errors:

@@ -10,6 +10,9 @@ Additive: appends editor.css before the last </style> and editor.js before
 it is replaced in place. Always make a backup before running on a deck you
 care about.
 """
+from html.parser import HTMLParser
+import argparse
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -61,8 +64,76 @@ def inject(path: str) -> None:
     print(f'editor injected into {target} ({len(src)} bytes)')
 
 
+class RuntimeEditorStripper(HTMLParser):
+    VOID = {'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'}
+
+    def __init__(self):
+        super().__init__(convert_charrefs=False)
+        self.output = []
+        self.skip = 0
+
+    def handle_starttag(self, tag, attrs):
+        ident = dict(attrs).get('id', '')
+        if self.skip or ident.startswith('ed-'):
+            if tag not in self.VOID:
+                self.skip += 1
+        else:
+            self.output.append(self.get_starttag_text())
+
+    def handle_startendtag(self, tag, attrs):
+        if not self.skip and not dict(attrs).get('id', '').startswith('ed-'):
+            self.output.append(self.get_starttag_text())
+
+    def handle_endtag(self, tag):
+        if self.skip:
+            if tag not in self.VOID:
+                self.skip -= 1
+        else:
+            self.output.append('</'+tag+'>')
+
+    def handle_data(self, data):
+        if not self.skip:
+            self.output.append(data)
+
+    def handle_entityref(self, name):
+        self.handle_data('&'+name+';')
+
+    def handle_charref(self, name):
+        self.handle_data('&#'+name+';')
+
+    def handle_comment(self, data):
+        self.handle_data('<!--'+data+'-->')
+
+    def handle_decl(self, decl):
+        self.handle_data('<!'+decl+'>')
+
+
+def remove(path: str) -> None:
+    target = Path(path).resolve()
+    text = target.read_text(encoding='utf-8')
+    text = re.sub(r'<script\b[^>]*>(?:(?!</script>).)*__brainEdInit(?:(?!</script>).)*</script>', '', text, flags=re.S)
+    start = text.find(CSS_MARK)
+    if start >= 0:
+        end = text.find('</style>', start)
+        if end < 0:
+            raise ValueError('Unterminated editor CSS')
+        text = text[:start] + text[end:]
+    # Runtime-exported copies may retain editor UI and selection state.
+    parser = RuntimeEditorStripper()
+    parser.feed(text)
+    text = ''.join(parser.output)
+    text = re.sub(r'\scontenteditable=(?:"[^"]*"|\'[^\']*\')', '', text)
+    text = re.sub(r'\bed-(?:on|hover|selected)\b', '', text)
+    target.write_text(text, encoding='utf-8')
+    print(f'editor removed from {target}')
+
+
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        print(__doc__)
-        sys.exit(1)
-    inject(sys.argv[1])
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('html')
+    parser.add_argument('--remove', action='store_true', help='Remove editor code, CSS and runtime UI')
+    args = parser.parse_args()
+    if args.remove:
+        remove(args.html)
+    else:
+        inject(args.html)

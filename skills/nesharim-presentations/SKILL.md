@@ -1,13 +1,20 @@
 ---
 name: nesharim-presentations
 description: Create, revise, validate, export, or publish branded Hebrew RTL presentations for Nesharim as self-contained HTML and optional PDF. Use for a new מצגת, converting notes into slides, updating an existing Nesharim deck, adding visual edit mode, or publishing a finished deck. Do not use for unrelated presentations or ordinary documents.
-metadata:
-  short-description: Branded Hebrew presentations for Nesharim
 ---
 
 # Nesharim Presentations
 
 Create clear Hebrew RTL presentations that preserve the Nesharim visual system and remain usable from desktop and mobile. Treat publishing as a separate, explicitly authorized action.
+
+## Check freshness before every use
+
+Before creating, revising, exporting, or publishing a deck, compare the loaded skill and package version with `main` in the canonical repository below. Do this once at the beginning of each task, including when invoked on another device or platform.
+
+- In a Git checkout, fetch `origin/main`, inspect local changes, and fast-forward only when safe. Never discard local work.
+- With a connected GitHub tool, resolve the current `main` commit and read its `SKILL.md`, plugin version, and all references/scripts needed for the task. If the installed copy is older, use the current remote instructions and matching resources together for this task.
+- If comparison or loading fails, state that freshness could not be verified; never claim that the installed copy is current. Continue with the available copy only when the requested work can still be completed reliably.
+- Do not promise automatic plugin installation refresh. This preflight keeps task instructions current when the rule is loaded; an old installed copy may first need a plugin refresh to acquire the rule.
 
 ## Skill development and cross-device synchronization
 
@@ -35,11 +42,11 @@ The canonical source for this skill and its packaged resources is https://github
 2. Draft slide-level content in readable Hebrew. Use defaults instead of asking about audience, tone, depth, length, or theme unless the user supplied different values.
 3. Present content for approval before visual production. Apply edits and repeat until approved. A user may explicitly waive this checkpoint.
 4. Read [references/design-and-build.md](references/design-and-build.md). Build one self-contained HTML deck on a fixed 1920x1080 canvas with no slide-content reflow.
-5. Add Edit Mode unless the user asks for a clean presentation-only file. Inject it only after the base deck works.
-6. Run `scripts/inline_assets.py`, then `scripts/validate_deck.py`; fix every error.
+5. Keep Edit Mode absent by default in every artifact, including review HTML. Only on an explicit request, read [references/edit-mode.md](references/edit-mode.md) and inject it after the base deck works. Add quiet icon navigation with `scripts/configure_navigation.py`.
+6. Run `scripts/inline_assets.py`, then `scripts/validate_deck.py`; fix every error. Pass `--require-editor` only for an explicitly requested editable copy; use `--publish` on the publication copy.
 7. Render and inspect the opening, one representative content slide, and the closing. Spot-check wide and narrow/tall viewports; scaling must remain uniform.
 8. For the review round, deliver both validated HTML and a PDF proof. Do not publish yet.
-9. After the user explicitly approves the final deck, regenerate the final PDF and publish the HTML to the presentations repository. Return the PDF and verified public link.
+9. Only after explicit final approval and a request for a public link, regenerate and inspect the final PDF. Publish the editor-free HTML and final PDF together to the presentations repository. Verify the deployed HTML matches the approved publication file before returning the PDF and public link.
 
 ## Non-negotiable invariants
 
@@ -47,7 +54,7 @@ The canonical source for this skill and its packaged resources is https://github
 - Use one theme: blue by default, green only when requested.
 - Use only layouts A-F. Split overloaded slides instead of inventing another layout.
 - Supplied backgrounds already contain logo, footer, and decorative lines; never duplicate them in HTML.
-- Use fixed opening speaker details and closing contact details from the brand reference.
+- Use distinct opening and closing slides with the fixed structure and details from the brand reference. If the supplied first slide could be either a lecture title or content, ask which it is before building; do not guess.
 - Author at 1920x1080 with fixed pixels. Scale `#presentation` uniformly inside `#stage`; do not reflow slide content for mobile.
 - Keep navigation and Edit Mode chrome outside the scaled canvas where practical.
 - Review approval and publication approval are separate. Never publish before explicit final approval, and never overwrite an existing slug without resolving that conflict with the user.
@@ -57,5 +64,7 @@ The canonical source for this skill and its packaged resources is https://github
 
 - Review stage: validated self-contained HTML plus a PDF proof with one 16:9 slide per page.
 - Final stage, after explicit approval: regenerated final PDF plus a verified GitHub Pages URL under an ASCII kebab-case slug ending in `-matzeget`.
+
+For supplied finalized content, preserve the wording and slide order and honor an explicit waiver of content review. Identify revisions by both current slide number and title after insertions or removals. Verify the delivered file version, not only the local work.
 
 Report what was built, what was visually checked, and any requested artifact that could not be produced.
