@@ -1,0 +1,5 @@
+interface:
+  display_name: "מצגות נשרים"
+  short_description: "יצירה, עריכה וייצוא של מצגות נשרים בעברית"
+  brand_color: "#0A1C2F"
+  default_prompt: "Use $nesharim-presentations to create a branded Hebrew presentation from my topic."
