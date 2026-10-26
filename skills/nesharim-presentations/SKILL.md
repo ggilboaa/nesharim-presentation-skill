@@ -9,6 +9,19 @@ metadata:
 
 Create clear Hebrew RTL presentations that preserve the Nesharim visual system and remain usable from desktop and mobile. Treat publishing as a separate, explicitly authorized action.
 
+## Skill development and cross-device synchronization
+
+The canonical source for this skill and its packaged resources is https://github.com/ggilboaa/nesharim-presentation-skill (default branch: `main`).
+
+- Every update or future development of this skill must include a commit and push to this repository, including changes to instructions, references, scripts, assets, and plugin metadata. An authenticated GitHub connector write that creates the remote commit is equivalent to a local commit and push.
+- Before editing from any device, fetch the latest remote state and reconcile local changes without discarding anyone's work. When editing through the connector, read the current file and use its current SHA for the update.
+- Validate the changed skill or resources as appropriate, review the diff, and commit only the changes belonging to the requested skill update. Increment `plugin.json` version when the packaged skill changes.
+- Push the completed update to `main` when repository rules allow it. If a protected branch requires a pull request, push the update branch, create the pull request, and clearly report that cross-device availability is pending merge; do not bypass protections.
+- Verify the remote commit and changed files after pushing, and return the commit or pull request link. Do not report an update as synchronized until it is verified on the remote branch.
+- If authentication, connectivity, permissions, or conflicts prevent synchronization, preserve the work, explicitly report the pending push and the reason, and provide the next action. Never silently leave an update only on one device or use force-push to resolve a conflict.
+- Other devices must update or refresh their installed copy to consume the new version; a GitHub push alone does not guarantee that an already installed plugin refreshes automatically.
+- This synchronization requirement applies to developing the skill itself. Presentation content and generated decks follow the separate delivery and publication approvals below.
+
 ## Route the request
 
 - For a new deck or substantial rewrite, follow the full workflow below.
